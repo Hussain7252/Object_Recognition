@@ -1,0 +1,4 @@
+/home/hussain/computer_vision/CourseWork/Project3/build/CMakeFiles/vidDisplay.dir
+/home/hussain/computer_vision/CourseWork/Project3/build/CMakeFiles/img.dir
+/home/hussain/computer_vision/CourseWork/Project3/build/CMakeFiles/edit_cache.dir
+/home/hussain/computer_vision/CourseWork/Project3/build/CMakeFiles/rebuild_cache.dir

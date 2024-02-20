@@ -1,0 +1,10 @@
+cmake_minimum_required(VERSION 2.8)
+project(ObjectRecognition) # Avoid spaces in project names
+
+find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
+add_executable(vidDisplay src/thresholding.cpp header_files/objfun.h src/function_implement.cpp)
+add_executable(img src/image_testing.cpp header_files/objfun.h src/function_implement.cpp)
+target_link_libraries(vidDisplay ${OpenCV_LIBS})
+target_link_libraries(img ${OpenCV_LIBS})
