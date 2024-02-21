@@ -46,7 +46,7 @@ void video_turnon()
         }
         Mat segment_output(frame.size(), CV_8UC3);
         thresh(frame, th_frame);
-        cleanup(th_frame, clean_frame);
+        cleanup_custom(th_frame, clean_frame);
         segment_image(clean_frame, color_components, segment_output);
         imshow("Video", segment_output);
         int key = waitKey(1);
