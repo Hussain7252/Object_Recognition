@@ -1,9 +1,8 @@
 /*
 Project :- Real-Time 2D Object Recognition
-@ Author:- Hussain Kanchwala
+@ Author:- Hussain Kanchwala, Abdulaziz Suria
 @ Date  :- Start: - 02/19/24 End:- 02/25/24
 */
-
 
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
@@ -12,10 +11,13 @@ using namespace std;
 using namespace cv;
 
 // Turns on your device default camera
-void video_turnon() {
+void video_turnon()
+{
     VideoCapture capdev(0);
-    if (!capdev.isOpened()) {
-        cout<<"Unable to open video device"<<"\n";
+    if (!capdev.isOpened())
+    {
+        cout << "Unable to open video device"
+             << "\n";
     }
 
     int frameWidth = capdev.get(CAP_PROP_FRAME_WIDTH);
@@ -30,18 +32,26 @@ void video_turnon() {
     namedWindow("Video", 1); // identifies a window
     Mat frame;
     Mat th_frame;
-    Mat clean;
-    while (true) {
+    Mat clean_frame;
+    vector<Vec3b> color_components;
+    create_color_vector(color_components);
+    while (true)
+    {
         capdev >> frame; // get a new frame from the camera, treat as a stream
-        if (frame.empty()) {
-            cout<<"frame is empty"<<"\n";
+        if (frame.empty())
+        {
+            cout << "frame is empty"
+                 << "\n";
             break;
         }
-        thresh(frame,th_frame);
-        cleanup(th_frame,clean);
-        imshow("Video",clean);
+        Mat segment_output(frame.size(), CV_8UC3);
+        thresh(frame, th_frame);
+        cleanup(th_frame, clean_frame);
+        segment_image(clean_frame, color_components, segment_output);
+        imshow("Video", segment_output);
         int key = waitKey(1);
-        if (key == 27 || key == 'q' || key == 'Q'){
+        if (key == 27 || key == 'q' || key == 'Q')
+        {
             break;
         }
     }
@@ -49,7 +59,8 @@ void video_turnon() {
     destroyAllWindows();
 }
 
-int main() {
+int main()
+{
     video_turnon();
     return 0;
 }

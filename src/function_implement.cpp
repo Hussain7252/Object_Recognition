@@ -67,3 +67,35 @@ void cleanup(Mat frame, Mat &currentframe)
     dilate(frame, dst, d_kernel, Point(-1, -1), 1);
     erode(dst, currentframe, e_kernel, Point(-1, -1), 1);
 }
+
+// fixed predefined set of colors generate once per program
+void create_color_vector(vector<Vec3b> &color_components)
+{
+    // fixed list of 30 colors at start of the program
+    for (int i = 0; i < 30; i++)
+    {
+        color_components.push_back(cv::Vec3b(rand() % 256, rand() % 256, rand() % 256));
+    }
+    // background color
+    color_components[0] = Vec3b(0, 0, 0);
+}
+
+void segment_image(Mat frame, vector<Vec3b> &color_components, Mat &segment_output)
+{
+
+    // Use  these two lines to further continue for task 4 in main program itself, I did the visual display
+    Mat img_labels, img_stats, centroids;
+    int label_count = connectedComponentsWithStats(frame, img_labels, img_stats, centroids);
+
+    for (int i = 0; i < img_labels.rows; i++)
+    {
+        for (int j = 0; j < img_labels.cols; j++)
+        {
+            int curr_label = img_labels.at<int>(i, j);
+            if (curr_label > 0 && curr_label <= label_count)
+            {
+                segment_output.at<Vec3b>(i, j) = color_components[curr_label];
+            }
+        }
+    }
+}

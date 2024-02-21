@@ -9,18 +9,25 @@ Project :- Real-Time 2D Object Recognition
 using namespace std;
 using namespace cv;
 
-int main(){
+int main()
+{
     string path;
-    getline(cin,path);
-    Mat frame=imread(path);
+    getline(cin, path);
+    Mat frame = imread(path);
     Mat currentframe;
     Mat dst;
-    thresh(frame,currentframe);
-    imshow("img",currentframe);
+    Mat segment_output(frame.size(), CV_8UC3);
+    vector<Vec3b> color_components;
+    create_color_vector(color_components);
+    thresh(frame, currentframe);
+    imshow("img", currentframe);
     waitKey(0);
 
-    cleanup(currentframe,dst);
-    imshow("clean",dst);
+    cleanup(currentframe, dst);
+    imshow("clean", dst);
+    waitKey(0);
+    segment_image(dst, color_components, segment_output);
+    imshow("segment", segment_output);
     waitKey(0);
 
     return 0;
