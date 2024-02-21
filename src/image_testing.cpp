@@ -23,7 +23,7 @@ int main()
     imshow("img", currentframe);
     waitKey(0);
 
-    cleanup(currentframe, dst);
+    cleanup_custom(currentframe, dst);
     imshow("clean", dst);
     waitKey(0);
     segment_image(dst, color_components, segment_output);
