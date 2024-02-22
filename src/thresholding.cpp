@@ -31,10 +31,15 @@ void video_turnon()
     std::cout << "Total Number of Frames: " << totalFrames << std::endl;
     namedWindow("Video", 1); // identifies a window
     Mat frame;
+    Mat gray;
     Mat th_frame;
     Mat clean_frame;
+    int min_area;
+    cout<<"Please enter the  minimum segmentation area "<<endl;
+    cin>>min_area;
     vector<Vec3b> color_components;
     create_color_vector(color_components);
+
     while (true)
     {
         capdev >> frame; // get a new frame from the camera, treat as a stream
@@ -44,12 +49,35 @@ void video_turnon()
                  << "\n";
             break;
         }
-        Mat segment_output(frame.size(), CV_8UC3);
-        thresh(frame, th_frame);
-        cleanup_custom(th_frame, clean_frame);
-        segment_image(clean_frame, color_components, segment_output);
+        // key press
+        int key = waitKey(1);int key = waitKey(1);
+        Mat segment_output;
+        // COnvert to gray
+        cvtColor(frame, gray, COLOR_BGR2GRAY);
+        // Get the dynamic threshold
+        int  th = thresh(gray);
+        // Use the dynamic threshold to get the thresholded frame
+        thresh_custom(th,gray, th_frame);
+        // Clean the thresholded frame
+        // For cleanup_custom
+        cleanup(th_frame, clean_frame);
+        // Group the regions
+        vector<int> reqregionsid = segment_image(clean_frame,color_components, segment_output, min_area);
+        // Feature Vector Collection for Major Regions
+        cv::Mat label, stat, centroid, featureframe;
+        int regionid = cv::connectedComponentsWithStats(clean_frame,label,stat,centroid,8);
+        vector<float> featurevector = Feature(segment_output,featureframe,label,regionid,reqregionsid);
+        // Store in CSV on press of N button
+        if (key == 'n' || key == 'N'){
+            string lab;
+            cout<<"Please enter the  label of the  item"<<endl;
+            getline(cin,lab);
+            append_image_data_csv(featurefile,lab,featurevector,0);
+        }
+
+        // Display the video
         imshow("Video", segment_output);
-        int key = waitKey(1);
+        
         if (key == 27 || key == 'q' || key == 'Q')
         {
             break;

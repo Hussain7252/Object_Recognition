@@ -4,17 +4,28 @@ using namespace cv;
 using namespace std;
 
 // OTSU binary thresholding
-void thresh(Mat frame, Mat &currentframe);
+int thresh(Mat frame); // Pass the gray frame as input
 
-void thresh_custom(Mat frame, Mat &currentframe);
+// Thresholding the gray scale image
+void thresh_custom(int th,Mat frame,Mat& currentframe); // Inputs are threshold, Gray frame and frame to store the thresholded frame
+
 // Thresholded Image cleanup
 void cleanup(Mat frame, Mat &currentframe);
 
+// Custom Cleanup
 void cleanup_custom(Mat frame, Mat &currentframe);
 
-void segment_image(Mat frame, vector<Vec3b> &color_components, Mat &segment_output);
+// Dialation Implementation
+void dilate_custom(Mat &src, Mat &dst, Mat &d_kernel);
 
+// Erosion Implementation
+void erode_custom(Mat &src, Mat &dst, Mat &e_kernel);
+
+// Create colors for the segmented image
 void create_color_vector(vector<Vec3b> &color_components);
 
-void dilate_custom(Mat &src, Mat &dst, Mat &d_kernel);
-void erode_custom(Mat &src, Mat &dst, Mat &e_kernel);
+// Image Segmentation
+void segment_image(Mat frame, const vector<Vec3b> &color_components, Mat &segment_output, const int min_area);
+
+
+
