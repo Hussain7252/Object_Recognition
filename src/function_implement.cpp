@@ -75,7 +75,6 @@ int thresh(Mat frame)
             th = t;
         }
     }
-    cout << th << endl;
     return th;
 }
 
@@ -286,18 +285,40 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
     float percentFilled = area / (boundingBox.size.width * boundingBox.size.height);
     float bboxRatio = boundingBox.size.height / boundingBox.size.width;
 
+    //HuMoments
+    vector<double> humoment(7);
+    HuMoments(m,humoment);
+    vector<float> scaledhumoment(7);
+    for(int j = 0; j < 7; j++) {
+        // Check for the absolute value to avoid log of zero or negative numbers
+        double absValue = abs(humoment[j]);
+        if (absValue > numeric_limits<double>::epsilon()) { // Check if absValue is not too close to zero
+            scaledhumoment[j] = copysign(1.0, humoment[j]) * log10(absValue);
+        } else {
+            scaledhumoment[j] = 0; // Assign 0 if the Hu Moment is too close to zero to avoid -inf from log10
+        }
+        features.push_back(scaledhumoment[j]);
+    }
+
     // Add features to the vector
     features.push_back(percentFilled);
     features.push_back(bboxRatio);
     features.push_back(eccentricity); // Example additional feature
-
-    // Optionally, overlay the oriented bounding box and axis of least moment on the original image
-    // Code to draw the bounding box and axis could be added here
+    
+    // bounding box and axis could be added here
     Point2f vertices[4];
     boundingBox.points(vertices);
     for (int i = 0; i < 4; i++) {
         line(segmented_img, vertices[i], vertices[(i+1) % 4], Scalar(0,255,0), 2); // Green box with a thickness of 2
     }
+
+    // Draw the axis of least moment central axis
+    double length = max(boundingBox.size.width, boundingBox.size.height); // Length of the line representing the axis
+    Point2f p1(centroidX, centroidY); // Centroid
+    Point2f p2 = p1 + Point2f(0.5*static_cast<float>(cos(theta) * length), 0.5*static_cast<float>(sin(theta) * length));  //Forward direction
+    Point2f p3 = p1 - Point2f(0.5*static_cast<float>(cos(theta) * length), 0.5*static_cast<float>(sin(theta) * length));  //Backward direction
+    line(segmented_img, p1, p2, Scalar(0,0,255), 2); //Red Line for the axis
+    line(segmented_img, p1, p3, Scalar(0,0,255), 2); 
     return features;
 }
 

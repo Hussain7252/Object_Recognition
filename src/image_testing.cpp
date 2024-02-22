@@ -41,7 +41,9 @@ int main()
 
     // Image Segmentation
     int biggest = segment_image(dst,regionmap,color_components, segment_output, minarea,major_regions);
-    cout<<biggest<<endl;
+    
+    // Feature Vector Generation
+    vector<float> featurevector = computeFeatures(regionmap,biggest,segment_output);
     imshow("segment", segment_output);
     waitKey(0);
 
