@@ -51,4 +51,5 @@ set(CMAKE_MAKEFILE_PRODUCTS
 set(CMAKE_DEPEND_INFO_FILES
   "CMakeFiles/vidDisplay.dir/DependInfo.cmake"
   "CMakeFiles/img.dir/DependInfo.cmake"
+  "CMakeFiles/try.dir/DependInfo.cmake"
   )

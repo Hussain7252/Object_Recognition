@@ -25,7 +25,7 @@ void erode_custom(Mat &src, Mat &dst, Mat &e_kernel);
 void create_color_vector(vector<Vec3b> &color_components);
 
 // Image Segmentation
-void segment_image(Mat frame, const vector<Vec3b> &color_components, Mat &segment_output, const int min_area);
+int segment_image(Mat frame, Mat &region_map,const vector<Vec3b> &color_components, Mat &segment_output, const int min_area,vector<int> &major_regions);
 
-
-
+// Compute Features
+vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img);

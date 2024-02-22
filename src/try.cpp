@@ -9,8 +9,8 @@ Project :- Real-Time 2D Object Recognition
 using namespace std;
 using namespace cv;
 
-int main()
-{
+int main(){
+    /*
     string path;
     cout<<"Please enter the image path "<<endl;
     getline(cin, path);
@@ -19,9 +19,7 @@ int main()
     Mat dst;
     Mat gray;
     Mat segment_output;
-    Mat regionmap;
     int minarea;
-    vector<int> major_regions;
     cout<<"Enter min segmentation area "<<endl;
     cin>>minarea;
     vector<Vec3b> color_components;
@@ -40,11 +38,28 @@ int main()
     waitKey(0);
 
     // Image Segmentation
-    int biggest = segment_image(dst,regionmap,color_components, segment_output, minarea,major_regions);
-    cout<<biggest<<endl;
+    segment_image(dst,color_components, segment_output, minarea);
     imshow("segment", segment_output);
     waitKey(0);
+    */
+    string path;
+    cout<<"Please enter the image path "<<endl;
+    getline(cin, path);
+    Mat src = imread(path);
+    Mat gray;
+    Mat dst = Mat::zeros(src.size(),CV_8UC3);
+    cvtColor( src, gray, cv::COLOR_BGR2GRAY ); //converting to grayscale
+    GaussianBlur( gray, gray, cv::Size(5,5),1); //applying blur 
+    Mat cannyOut;
+    Canny( gray, cannyOut, 50, 200 ); //applying canny edge detector
+    vector<vector<Point>> contour;
+    //finding the contour points of different regions
+    cv::findContours( cannyOut, contour, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+    //vector<Point> cont = contour[0];
 
+    cv::drawContours(dst, contour, 1, cv::Scalar(0, 255, 0), 2);
+    imshow("cont",dst);
+    waitKey(0);
 
     return 0;
 }

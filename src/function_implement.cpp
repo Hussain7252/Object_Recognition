@@ -85,10 +85,16 @@ void cleanup(Mat frame, Mat &currentframe)
 {
 
     Mat d_kernel = getStructuringElement(MORPH_RECT, Size(8, 8));
-    Mat e_kernel = getStructuringElement(MORPH_RECT, Size(5, 5));
+    Mat e_kernel = getStructuringElement(MORPH_RECT, Size(8, 8));
+    Mat e_kernel_e = getStructuringElement(MORPH_RECT, Size(3, 3));
+    Mat d_kernel_e = getStructuringElement(MORPH_RECT, Size(3, 3));
     Mat dst;
     dilate(frame, dst, d_kernel, Point(-1, -1), 1);
-    erode(dst, currentframe, e_kernel, Point(-1, -1), 1);
+    erode(dst,dst, e_kernel, Point(-1, -1), 1);
+    erode(dst,dst,e_kernel_e,Point(-1,-1),1);
+    dilate(dst, dst, d_kernel_e, Point(-1, -1), 1);
+    erode(dst,currentframe,e_kernel_e,Point(-1,-1),1);
+    
 }
 
 // Dialte Custom Implementation
@@ -164,7 +170,7 @@ void erode_custom(Mat &src, Mat &dst, Mat &e_kernel)
 void cleanup_custom(Mat frame, Mat &currentframe)
 {
     Mat d_kernel = Mat::ones(Size(8, 8), CV_8U);
-    Mat e_kernel = Mat::ones(Size(3, 3), CV_8U);
+    Mat e_kernel = Mat::ones(Size(12, 12), CV_8U);
     Mat dst;
     dilate_custom(frame, dst, d_kernel);
     erode_custom(dst, currentframe, e_kernel);
@@ -212,20 +218,28 @@ void create_color_vector(vector<Vec3b> &color_components) {
 }
 
 // Image Segmentation
-void segment_image(Mat frame, const vector<Vec3b> &color_components, Mat &segment_output, const int min_area) {
+// Suppose we get the main regions then do the necessary
+int segment_image(Mat frame, Mat &img_labels,const vector<Vec3b> &color_components, Mat &segment_output, const int min_area,vector<int> &major_regions) {
     // Ensure the output image has the same dimensions as the input, but with 3 channels for color
     segment_output = Mat::zeros(frame.size(), CV_8UC3);
-
-    Mat img_labels, img_stats, centroids;
+    Mat img_stats, centroids;
     int label_count = connectedComponentsWithStats(frame, img_labels, img_stats, centroids, 8, CV_32S);
 
-    // Create a flag array to mark labels that meet the area requirement
-    vector<bool> valid_label(label_count, false);
+   // Biggest Region in frame
+    int biggest_region;
+    int min_ar = INT_MIN;
 
+     // Create a flag array to mark labels that meet the area requirement
+    vector<bool> valid_label(label_count, false);
     for (int i = 1; i < label_count; i++) { // Start from 1 to skip background
         int curr_area = img_stats.at<int>(i, CC_STAT_AREA);
         if (curr_area > min_area) {
             valid_label[i] = true;
+            major_regions.push_back(i);
+            if(curr_area > min_ar){
+                biggest_region = i;
+                min_ar = curr_area;
+            }
         }
     }
 
@@ -238,6 +252,126 @@ void segment_image(Mat frame, const vector<Vec3b> &color_components, Mat &segmen
             }
         }
     }
+    return biggest_region;
 }
 
-// 
+// Feature Vector Generation for the Major Region
+vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img) {
+    vector<float> features;
+
+    // Find pixels belonging to the region
+    Mat region = regionMap == regionId;
+
+    // Calculate moments
+    Moments m = moments(region, true);
+
+    // Calculate area (m00) and centroid (m10/m00, m01/m00)
+    double area = m.m00;
+    double centroidX = m.m10 / area;
+    double centroidY = m.m01 / area;
+
+    // Calculate the orientation and axis of least central moment
+    double a = m.mu20 / area;
+    double b = 2 * m.mu11 / area;
+    double c = m.mu02 / area;
+    double theta = 0.5 * atan2(b, a - c);
+    double eccentricity = sqrt(1 - (c / a));
+
+    // Calculate bounding box
+    vector<Point> regionPoints;
+    findNonZero(region, regionPoints);
+    RotatedRect boundingBox = minAreaRect(regionPoints);
+
+    // Calculate percent filled and bounding box ratio
+    float percentFilled = area / (boundingBox.size.width * boundingBox.size.height);
+    float bboxRatio = boundingBox.size.height / boundingBox.size.width;
+
+    // Add features to the vector
+    features.push_back(percentFilled);
+    features.push_back(bboxRatio);
+    features.push_back(eccentricity); // Example additional feature
+
+    // Optionally, overlay the oriented bounding box and axis of least moment on the original image
+    // Code to draw the bounding box and axis could be added here
+
+    return features;
+}
+
+
+
+/*
+//Function to generate feature vector of objects
+// Ref: - answer.opencv.org/question/74482
+vector<float> Feature(Mat &src, int th){ // Input is the segmented Image
+    Mat gray;
+    cvtColor( src, gray, cv::COLOR_BGR2GRAY ); //converting to grayscale
+    GaussianBlur( gray, gray, cv::Size(5,5),1); //applying blur 
+    Mat cannyOut;
+    Canny( gray, cannyOut, 50, 200 ); //applying canny edge detector
+    vector<vector<cv::Point>> contour;
+    
+    //finding the contour points of different regions
+    cv::findContours( canny_output, contour, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+
+    dst = src.clone();
+    vector<cv::Moments> moment(contour.size()); 
+    vector<vector<double>> huMoment(contour.size(),vector<double>(7));
+    vector<double> alpha(contour.size());
+    vector<cv::RotatedRect> obb(contour.size());
+
+    //calculating the invariant moments and axis of least central moment
+    for(int i=0; i<contour.size();i++){
+        moment[i] = cv::moments(contour[i],false);
+        cv::HuMoments(moment[i],huMoment[i]);
+        obb[i] = cv::minAreaRect(contour[i]);
+        alpha[i] = moment[i].mu20==moment[i].mu02?0:0.5*atan2((2*moment[i].mu11),(moment[i].mu20-moment[i].mu02));
+    }
+
+    
+    vector<float> feature;
+    for(int i=0; i<contour.size();i++){
+        cv::Point2f obb_corner[4];
+        obb[i].points(obb_corner);
+        for(int j=0; j<4; j++){
+            //drawing the oriented boundary box for each contour
+            cv::line(dst, obb_corner[j], obb_corner[(j+1)%4], cv::Scalar(0,255,0)); 
+        }
+
+        float length = obb[i].size.height>obb[i].size.width?obb[i].size.height:obb[i].size.width;
+        cv::Point P1;
+        P1.x = moment[i].m10/moment[i].m00;
+        P1.y = moment[i].m01/moment[i].m00;
+        cv::Point P2;
+        P2.x =  (int)round(P1.x + 0.5*length * cos(alpha[i]));
+        P2.y =  (int)round(P1.y + 0.5*length * sin(alpha[i]));
+
+        //drawing the least central moment axis for each contour
+        cv::line(dst,P1,P2,cv::Scalar(255,0,0));
+
+        vector<float> invarMoment(7);    
+        for(int j=0; j<7;j++){
+            //scaling the huMoment values
+            invarMoment[j] = -1 * copysign(1.0, huMoment[i][j]) * log10(huMoment[i][j]>0?huMoment[i][j]:(-1*huMoment[i][j]));
+        }
+        string text = std::to_string(invarMoment[0]);
+
+        //displaying the huMoment feature in real time for each contour
+        cv::putText(dst,text,P1,cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(255,0,0),1);
+
+        //calculating the %filled of area of contour
+        float areaRatio = contourArea(contour[i])/(obb[i].size.height*obb[i].size.width);
+        
+        //calcuating the height to width ratio
+        float dimRatio = std::min(obb[i].size.height,obb[i].size.width)/std::max(obb[i].size.height,obb[i].size.width);
+
+        //generating the feature vector for each contour
+        feature.push_back(invarMoment[0]);
+        feature.push_back(invarMoment[1]);
+        feature.push_back(invarMoment[2]);
+        feature.push_back(invarMoment[3]);
+        feature.push_back(areaRatio);
+        feature.push_back(dimRatio);
+    }
+    return feature;
+}
+*/

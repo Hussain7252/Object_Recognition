@@ -50,8 +50,13 @@ void video_turnon()
             break;
         }
         // key press
-        int key = waitKey(1);int key = waitKey(1);
+        int key = waitKey(1);
+        
+        //  For segmentation
         Mat segment_output;
+        Mat region_map;
+        vector<int> major_regions;
+        //
         // COnvert to gray
         cvtColor(frame, gray, COLOR_BGR2GRAY);
         // Get the dynamic threshold
@@ -62,19 +67,18 @@ void video_turnon()
         // For cleanup_custom
         cleanup(th_frame, clean_frame);
         // Group the regions
-        vector<int> reqregionsid = segment_image(clean_frame,color_components, segment_output, min_area);
-        // Feature Vector Collection for Major Regions
-        cv::Mat label, stat, centroid, featureframe;
-        int regionid = cv::connectedComponentsWithStats(clean_frame,label,stat,centroid,8);
-        vector<float> featurevector = Feature(segment_output,featureframe,label,regionid,reqregionsid);
+        int biggest_region = segment_image(clean_frame,region_map,color_components, segment_output, min_area,major_regions);
+        // Feature Vector for biggest region
+        vector<float> featurevector = computeFeatures(region_map,biggest_region,segment_output);
         // Store in CSV on press of N button
+        /*
         if (key == 'n' || key == 'N'){
             string lab;
             cout<<"Please enter the  label of the  item"<<endl;
             getline(cin,lab);
             append_image_data_csv(featurefile,lab,featurevector,0);
         }
-
+        */
         // Display the video
         imshow("Video", segment_output);
         

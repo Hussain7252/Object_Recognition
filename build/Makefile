@@ -142,6 +142,19 @@ img/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/build
 .PHONY : img/fast
 
+#=============================================================================
+# Target rules for targets named try
+
+# Build rule for target.
+try: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 try
+.PHONY : try
+
+# fast build rule for target.
+try/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/build
+.PHONY : try/fast
+
 src/function_implement.o: src/function_implement.cpp.o
 .PHONY : src/function_implement.o
 
@@ -149,6 +162,7 @@ src/function_implement.o: src/function_implement.cpp.o
 src/function_implement.cpp.o:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/function_implement.cpp.o
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/src/function_implement.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/function_implement.cpp.o
 .PHONY : src/function_implement.cpp.o
 
 src/function_implement.i: src/function_implement.cpp.i
@@ -158,6 +172,7 @@ src/function_implement.i: src/function_implement.cpp.i
 src/function_implement.cpp.i:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/function_implement.cpp.i
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/src/function_implement.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/function_implement.cpp.i
 .PHONY : src/function_implement.cpp.i
 
 src/function_implement.s: src/function_implement.cpp.s
@@ -167,6 +182,7 @@ src/function_implement.s: src/function_implement.cpp.s
 src/function_implement.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/function_implement.cpp.s
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/src/function_implement.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/function_implement.cpp.s
 .PHONY : src/function_implement.cpp.s
 
 src/image_testing.o: src/image_testing.cpp.o
@@ -217,6 +233,30 @@ src/thresholding.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/thresholding.cpp.s
 .PHONY : src/thresholding.cpp.s
 
+src/try.o: src/try.cpp.o
+.PHONY : src/try.o
+
+# target to build an object file
+src/try.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/try.cpp.o
+.PHONY : src/try.cpp.o
+
+src/try.i: src/try.cpp.i
+.PHONY : src/try.i
+
+# target to preprocess a source file
+src/try.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/try.cpp.i
+.PHONY : src/try.cpp.i
+
+src/try.s: src/try.cpp.s
+.PHONY : src/try.s
+
+# target to generate assembly for a file
+src/try.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/try.cpp.s
+.PHONY : src/try.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -226,6 +266,7 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... img"
+	@echo "... try"
 	@echo "... vidDisplay"
 	@echo "... src/function_implement.o"
 	@echo "... src/function_implement.i"
@@ -236,6 +277,9 @@ help:
 	@echo "... src/thresholding.o"
 	@echo "... src/thresholding.i"
 	@echo "... src/thresholding.s"
+	@echo "... src/try.o"
+	@echo "... src/try.i"
+	@echo "... src/try.s"
 .PHONY : help
 
 
