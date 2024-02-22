@@ -293,7 +293,11 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
 
     // Optionally, overlay the oriented bounding box and axis of least moment on the original image
     // Code to draw the bounding box and axis could be added here
-
+    Point2f vertices[4];
+    boundingBox.points(vertices);
+    for (int i = 0; i < 4; i++) {
+        line(segmented_img, vertices[i], vertices[(i+1) % 4], Scalar(0,255,0), 2); // Green box with a thickness of 2
+    }
     return features;
 }
 
