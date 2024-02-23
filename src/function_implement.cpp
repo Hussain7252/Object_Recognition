@@ -1,25 +1,31 @@
+/*
+@ Author:- Hussain Kanchwala, Abdulaziz Suria
+@ Date  :- Start: - 02/19/24 End:- 02/25/24
+@ Description : A file consisting of all function implementations of the object recognition task. It also has custom implementation of Thresholding and cleanup as well.
+*/
+
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 #include "../header_files/objfun.h"
+#include <unordered_set>
 using namespace std;
 using namespace cv;
 
-
 // Given the threshold generates the thresholded image from gray scale image
-void thresh_custom(int th,Mat frame,Mat& currentframe)
+void thresh_custom(int th, Mat frame, Mat &currentframe)
 {
     Mat dst = Mat::zeros(frame.size(), frame.type());
     for (int i = 0; i < frame.rows; i++)
     {
-        for (int j = 0; j < frame.cols; j++)                                                      
+        for (int j = 0; j < frame.cols; j++)
         {
-            if (frame.at<uchar>(i,j) < th)
+            if (frame.at<uchar>(i, j) < th)
             {
-                dst.at<uchar>(i,j) = 255;
-            }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+                dst.at<uchar>(i, j) = 255;
+            }
             else
             {
-                dst.at<uchar>(i,j) = 0;
+                dst.at<uchar>(i, j) = 0;
             }
         }
     }
@@ -27,7 +33,7 @@ void thresh_custom(int th,Mat frame,Mat& currentframe)
 }
 
 // Implementing OTSU dynamic thresholding
-int thresh(Mat frame)
+int get_otsu_thresh(Mat frame)
 {
     int histogram[256] = {0};
     GaussianBlur(frame, frame, Size(5, 5), 0); // Smooth the gray scale
@@ -50,7 +56,7 @@ int thresh(Mat frame)
 
     float sumB = 0, wB = 0, wF = 0, varMax = 0;
     float th = 0;
-    for (int t = 0; t < 256; t++) 
+    for (int t = 0; t < 256; t++)
     {
         wB += histogram[t]; // Weight Background
         if (wB == 0)
@@ -78,7 +84,6 @@ int thresh(Mat frame)
     return th;
 }
 
-
 // Non custom implementation of Erosion annd Dialation
 void cleanup(Mat frame, Mat &currentframe)
 {
@@ -89,11 +94,10 @@ void cleanup(Mat frame, Mat &currentframe)
     Mat d_kernel_e = getStructuringElement(MORPH_RECT, Size(3, 3));
     Mat dst;
     dilate(frame, dst, d_kernel, Point(-1, -1), 1);
-    erode(dst,dst, e_kernel, Point(-1, -1), 1);
-    erode(dst,dst,e_kernel_e,Point(-1,-1),1);
+    erode(dst, dst, e_kernel, Point(-1, -1), 1);
+    erode(dst, dst, e_kernel_e, Point(-1, -1), 1);
     dilate(dst, dst, d_kernel_e, Point(-1, -1), 1);
-    erode(dst,currentframe,e_kernel_e,Point(-1,-1),1);
-    
+    erode(dst, currentframe, e_kernel_e, Point(-1, -1), 1);
 }
 
 // Dialte Custom Implementation
@@ -165,7 +169,7 @@ void erode_custom(Mat &src, Mat &dst, Mat &e_kernel)
     }
 }
 
-// 
+//
 void cleanup_custom(Mat frame, Mat &currentframe)
 {
     Mat d_kernel = Mat::ones(Size(8, 8), CV_8U);
@@ -197,19 +201,21 @@ void segment_image(Mat cleanedup, Mat &segmented_output,const int min_area)
             if(area>=min_area){
                 dst.at<Vec3b>(r,c) = colors[label];
             }
-        }    
+        }
     }
     segmented_output = dst.clone();
 }
 */
 
 // fixed predefined set of colors generate once per program
-void create_color_vector(vector<Vec3b> &color_components) {
+void create_color_vector(vector<Vec3b> &color_components)
+{
     // Ensure the vector is empty before adding new colors
     color_components.clear();
-    
-    // Fixed list of 30 colors at start of the program
-    for (int i = 0; i < 30; i++) {
+
+    // Fixed list of 256 colors at start of the program
+    for (int i = 0; i < 256; i++)
+    {
         color_components.push_back(cv::Vec3b(rand() % 256, rand() % 256, rand() % 256));
     }
     // Background color
@@ -218,44 +224,55 @@ void create_color_vector(vector<Vec3b> &color_components) {
 
 // Image Segmentation
 // Suppose we get the main regions then do the necessary
-int segment_image(Mat frame, Mat &img_labels,const vector<Vec3b> &color_components, Mat &segment_output, const int min_area,vector<int> &major_regions) {
+int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_components, Mat &segment_output, int top_n, vector<int> &major_regions)
+{
     // Ensure the output image has the same dimensions as the input, but with 3 channels for color
     segment_output = Mat::zeros(frame.size(), CV_8UC3);
     Mat img_stats, centroids;
     int label_count = connectedComponentsWithStats(frame, img_labels, img_stats, centroids, 8, CV_32S);
 
-   // Biggest Region in frame
-    int biggest_region;
-    int min_ar = INT_MIN;
+    vector<pair<int, int>> area_map;
+    // Biggest Region in frame
 
-     // Create a flag array to mark labels that meet the area requirement
-    vector<bool> valid_label(label_count, false);
-    for (int i = 1; i < label_count; i++) { // Start from 1 to skip background
+    for (int i = 1; i < label_count; i++)
+    { // Start from 1 to skip background
         int curr_area = img_stats.at<int>(i, CC_STAT_AREA);
-        if (curr_area > min_area) {
-            valid_label[i] = true;
-            major_regions.push_back(i);
-            if(curr_area > min_ar){
-                biggest_region = i;
-                min_ar = curr_area;
-            }
-        }
+        area_map.push_back(make_pair(curr_area, i));
+    }
+    sort(area_map.begin(), area_map.end(), greater<>());
+
+    // Get the top n labels within range
+    top_n = min(top_n, label_count - 1);
+
+    // Keep the top n values in the area map
+    area_map.resize(top_n);
+
+    // Use set for faster retrieval of labels
+    unordered_set<int> valid_labels;
+
+    for (const auto &area_label_pair : area_map)
+    {
+        valid_labels.insert(area_label_pair.second);
     }
 
     // Color valid segments in one pass
-    for (int x = 0; x < img_labels.rows; x++) {
-        for (int y = 0; y < img_labels.cols; y++) {
+    for (int x = 0; x < img_labels.rows; x++)
+    {
+        for (int y = 0; y < img_labels.cols; y++)
+        {
             int curr_label = img_labels.at<int>(x, y);
-            if (valid_label[curr_label]) {
+            if (valid_labels.find(curr_label) != valid_labels.end())
+            {
                 segment_output.at<Vec3b>(x, y) = color_components[curr_label % color_components.size()];
             }
         }
     }
-    return biggest_region;
+    return area_map[0].second;
 }
 
 // Feature Vector Generation for the Major Region
-vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img) {
+vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img)
+{
     vector<float> features;
 
     // Find pixels belonging to the region
@@ -283,18 +300,22 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
 
     // Calculate percent filled and bounding box ratio
     float percentFilled = area / (boundingBox.size.width * boundingBox.size.height);
-    float bboxRatio = max(boundingBox.size.height,boundingBox.size.width) / min(boundingBox.size.width,boundingBox.size.height);
+    float bboxRatio = max(boundingBox.size.height, boundingBox.size.width) / min(boundingBox.size.width, boundingBox.size.height);
 
-    //HuMoments
+    // HuMoments
     vector<double> humoment(7);
-    HuMoments(m,humoment);
+    HuMoments(m, humoment);
     vector<float> scaledhumoment(7);
-    for(int j = 0; j < 7; j++) {
+    for (int j = 0; j < 7; j++)
+    {
         // Check for the absolute value to avoid log of zero or negative numbers
         double absValue = abs(humoment[j]);
-        if (absValue > numeric_limits<double>::epsilon()) { // Check if absValue is not too close to zero
-            scaledhumoment[j] = -1*copysign(1.0, humoment[j]) * log10(absValue);
-        } else {
+        if (absValue > numeric_limits<double>::epsilon())
+        { // Check if absValue is not too close to zero
+            scaledhumoment[j] = -1 * copysign(1.0, humoment[j]) * log10(absValue);
+        }
+        else
+        {
             scaledhumoment[j] = 0; // Assign 0 if the Hu Moment is too close to zero to avoid -inf from log10
         }
         features.push_back(scaledhumoment[j]);
@@ -304,26 +325,25 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
     features.push_back(percentFilled);
     features.push_back(bboxRatio);
     features.push_back(eccentricity); // Example additional feature
-    
+
     // bounding box and axis could be added here
     Point2f vertices[4];
     boundingBox.points(vertices);
-    for (int i = 0; i < 4; i++) {
-        line(segmented_img, vertices[i], vertices[(i+1) % 4], Scalar(0,255,0), 2); // Green box with a thickness of 2
+    for (int i = 0; i < 4; i++)
+    {
+        line(segmented_img, vertices[i], vertices[(i + 1) % 4], Scalar(0, 255, 0), 2); // Green box with a thickness of 2
     }
 
     // Draw the axis of least moment central axis
-    double length = max(boundingBox.size.width, boundingBox.size.height); // Length of the line representing the axis
-    Point2f p1(centroidX, centroidY); // Centroid
-    Point2f p2 = p1 + Point2f(0.5*static_cast<float>(cos(theta) * length), 0.5*static_cast<float>(sin(theta) * length));  //Forward direction
-    Point2f p3 = p1 - Point2f(0.5*static_cast<float>(cos(theta) * length), 0.5*static_cast<float>(sin(theta) * length));  //Backward direction
-    line(segmented_img, p1, p2, Scalar(0,0,255), 2); //Red Line for the axis
-    line(segmented_img, p1, p3, Scalar(0,0,255), 2); 
+    double length = max(boundingBox.size.width, boundingBox.size.height);                                                    // Length of the line representing the axis
+    Point2f p1(centroidX, centroidY);                                                                                        // Centroid
+    Point2f p2 = p1 + Point2f(0.5 * static_cast<float>(cos(theta) * length), 0.5 * static_cast<float>(sin(theta) * length)); // Forward direction
+    Point2f p3 = p1 - Point2f(0.5 * static_cast<float>(cos(theta) * length), 0.5 * static_cast<float>(sin(theta) * length)); // Backward direction
+    line(segmented_img, p1, p2, Scalar(0, 0, 255), 2);                                                                       // Red Line for the axis
+    line(segmented_img, p1, p3, Scalar(0, 0, 255), 2);
 
-    //Text Hu Moment
+    // Text Hu Moment
     string text = std::to_string(scaledhumoment[0]);
-    putText(segmented_img,text,p1,cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(255,0,0),1);//displaying the huMoment feature in real time for each contour
+    putText(segmented_img, text, p1, cv::FONT_HERSHEY_COMPLEX_SMALL, 1, cv::Scalar(255, 0, 0), 1); // displaying the huMoment feature in real time for each contour
     return features;
 }
-
-
