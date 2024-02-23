@@ -283,7 +283,7 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
 
     // Calculate percent filled and bounding box ratio
     float percentFilled = area / (boundingBox.size.width * boundingBox.size.height);
-    float bboxRatio = boundingBox.size.height / boundingBox.size.width;
+    float bboxRatio = max(boundingBox.size.height,boundingBox.size.width) / min(boundingBox.size.width,boundingBox.size.height);
 
     //HuMoments
     vector<double> humoment(7);
@@ -293,7 +293,7 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
         // Check for the absolute value to avoid log of zero or negative numbers
         double absValue = abs(humoment[j]);
         if (absValue > numeric_limits<double>::epsilon()) { // Check if absValue is not too close to zero
-            scaledhumoment[j] = copysign(1.0, humoment[j]) * log10(absValue);
+            scaledhumoment[j] = -1*copysign(1.0, humoment[j]) * log10(absValue);
         } else {
             scaledhumoment[j] = 0; // Assign 0 if the Hu Moment is too close to zero to avoid -inf from log10
         }
@@ -319,84 +319,11 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
     Point2f p3 = p1 - Point2f(0.5*static_cast<float>(cos(theta) * length), 0.5*static_cast<float>(sin(theta) * length));  //Backward direction
     line(segmented_img, p1, p2, Scalar(0,0,255), 2); //Red Line for the axis
     line(segmented_img, p1, p3, Scalar(0,0,255), 2); 
+
+    //Text Hu Moment
+    string text = std::to_string(scaledhumoment[0]);
+    putText(segmented_img,text,p1,cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(255,0,0),1);//displaying the huMoment feature in real time for each contour
     return features;
 }
 
 
-
-/*
-//Function to generate feature vector of objects
-// Ref: - answer.opencv.org/question/74482
-vector<float> Feature(Mat &src, int th){ // Input is the segmented Image
-    Mat gray;
-    cvtColor( src, gray, cv::COLOR_BGR2GRAY ); //converting to grayscale
-    GaussianBlur( gray, gray, cv::Size(5,5),1); //applying blur 
-    Mat cannyOut;
-    Canny( gray, cannyOut, 50, 200 ); //applying canny edge detector
-    vector<vector<cv::Point>> contour;
-    
-    //finding the contour points of different regions
-    cv::findContours( canny_output, contour, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-
-    dst = src.clone();
-    vector<cv::Moments> moment(contour.size()); 
-    vector<vector<double>> huMoment(contour.size(),vector<double>(7));
-    vector<double> alpha(contour.size());
-    vector<cv::RotatedRect> obb(contour.size());
-
-    //calculating the invariant moments and axis of least central moment
-    for(int i=0; i<contour.size();i++){
-        moment[i] = cv::moments(contour[i],false);
-        cv::HuMoments(moment[i],huMoment[i]);
-        obb[i] = cv::minAreaRect(contour[i]);
-        alpha[i] = moment[i].mu20==moment[i].mu02?0:0.5*atan2((2*moment[i].mu11),(moment[i].mu20-moment[i].mu02));
-    }
-
-    
-    vector<float> feature;
-    for(int i=0; i<contour.size();i++){
-        cv::Point2f obb_corner[4];
-        obb[i].points(obb_corner);
-        for(int j=0; j<4; j++){
-            //drawing the oriented boundary box for each contour
-            cv::line(dst, obb_corner[j], obb_corner[(j+1)%4], cv::Scalar(0,255,0)); 
-        }
-
-        float length = obb[i].size.height>obb[i].size.width?obb[i].size.height:obb[i].size.width;
-        cv::Point P1;
-        P1.x = moment[i].m10/moment[i].m00;
-        P1.y = moment[i].m01/moment[i].m00;
-        cv::Point P2;
-        P2.x =  (int)round(P1.x + 0.5*length * cos(alpha[i]));
-        P2.y =  (int)round(P1.y + 0.5*length * sin(alpha[i]));
-
-        //drawing the least central moment axis for each contour
-        cv::line(dst,P1,P2,cv::Scalar(255,0,0));
-
-        vector<float> invarMoment(7);    
-        for(int j=0; j<7;j++){
-            //scaling the huMoment values
-            invarMoment[j] = -1 * copysign(1.0, huMoment[i][j]) * log10(huMoment[i][j]>0?huMoment[i][j]:(-1*huMoment[i][j]));
-        }
-        string text = std::to_string(invarMoment[0]);
-
-        //displaying the huMoment feature in real time for each contour
-        cv::putText(dst,text,P1,cv::FONT_HERSHEY_COMPLEX_SMALL,1,cv::Scalar(255,0,0),1);
-
-        //calculating the %filled of area of contour
-        float areaRatio = contourArea(contour[i])/(obb[i].size.height*obb[i].size.width);
-        
-        //calcuating the height to width ratio
-        float dimRatio = std::min(obb[i].size.height,obb[i].size.width)/std::max(obb[i].size.height,obb[i].size.width);
-
-        //generating the feature vector for each contour
-        feature.push_back(invarMoment[0]);
-        feature.push_back(invarMoment[1]);
-        feature.push_back(invarMoment[2]);
-        feature.push_back(invarMoment[3]);
-        feature.push_back(areaRatio);
-        feature.push_back(dimRatio);
-    }
-    return feature;
-}
-*/
