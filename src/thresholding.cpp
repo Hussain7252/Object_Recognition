@@ -7,11 +7,17 @@ Project :- Real-Time 2D Object Recognition
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 #include "../header_files/objfun.h"
+#include "../header_files/csv_util.h"
+#include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <filesystem> 
+namespace fs = std::filesystem; 
 using namespace std;
 using namespace cv;
 
 // Turns on your device default camera
-void video_turnon()
+int video_turnon()
 {
     VideoCapture capdev(0);
     if (!capdev.isOpened())
@@ -30,15 +36,30 @@ void video_turnon()
     std::cout << "Frames Per Second (fps): " << fps << std::endl;
     std::cout << "Total Number of Frames: " << totalFrames << std::endl;
     namedWindow("Video", 1); // identifies a window
+    // Different Mat variables
     Mat frame;
     Mat gray;
     Mat th_frame;
     Mat clean_frame;
+    // Min area for segmentation
     int min_area;
     cout<<"Please enter the  minimum segmentation area "<<endl;
     cin>>min_area;
+    // Colored Components pre defined for labels
     vector<Vec3b> color_components;
     create_color_vector(color_components);
+    // Filename to store feature vectors
+    string file_path;
+    cout<<"Please enter the file name where features have to be stored and retrieved"<<endl;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    getline(cin,file_path);
+    // if (!file_path.ends_with(".csv")){
+    //     cout<<"Enter valid feature.csv file"<<endl;
+    //     return -1;
+    //}
+    char* filepath = new char[file_path.length() + 1];
+    strcpy(filepath, file_path.c_str());
+
 
     while (true)
     {
@@ -70,15 +91,20 @@ void video_turnon()
         int biggest_region = segment_image(clean_frame,region_map,color_components, segment_output, min_area,major_regions);
         // Feature Vector for biggest region
         vector<float> featurevector = computeFeatures(region_map,biggest_region,segment_output);
+
+        // Distance Metric Calculation
+        
         // Store in CSV on press of N button
-        /*
         if (key == 'n' || key == 'N'){
             string lab;
             cout<<"Please enter the  label of the  item"<<endl;
             getline(cin,lab);
-            append_image_data_csv(featurefile,lab,featurevector,0);
+            char* name = new char[lab.length()+1];
+            strcpy(name, lab.c_str());
+            append_image_data_csv(filepath,name,featurevector,0);
         }
-        */
+
+
         // Display the video
         imshow("Video", segment_output);
         
@@ -89,6 +115,7 @@ void video_turnon()
     }
     capdev.release();
     destroyAllWindows();
+    return 0;
 }
 
 int main()

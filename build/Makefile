@@ -155,6 +155,36 @@ try/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/build
 .PHONY : try/fast
 
+src/csv_util.o: src/csv_util.cpp.o
+.PHONY : src/csv_util.o
+
+# target to build an object file
+src/csv_util.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/csv_util.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/src/csv_util.cpp.o
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/csv_util.cpp.o
+.PHONY : src/csv_util.cpp.o
+
+src/csv_util.i: src/csv_util.cpp.i
+.PHONY : src/csv_util.i
+
+# target to preprocess a source file
+src/csv_util.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/csv_util.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/src/csv_util.cpp.i
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/csv_util.cpp.i
+.PHONY : src/csv_util.cpp.i
+
+src/csv_util.s: src/csv_util.cpp.s
+.PHONY : src/csv_util.s
+
+# target to generate assembly for a file
+src/csv_util.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/vidDisplay.dir/build.make CMakeFiles/vidDisplay.dir/src/csv_util.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/img.dir/build.make CMakeFiles/img.dir/src/csv_util.cpp.s
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/try.dir/build.make CMakeFiles/try.dir/src/csv_util.cpp.s
+.PHONY : src/csv_util.cpp.s
+
 src/function_implement.o: src/function_implement.cpp.o
 .PHONY : src/function_implement.o
 
@@ -268,6 +298,9 @@ help:
 	@echo "... img"
 	@echo "... try"
 	@echo "... vidDisplay"
+	@echo "... src/csv_util.o"
+	@echo "... src/csv_util.i"
+	@echo "... src/csv_util.s"
 	@echo "... src/function_implement.o"
 	@echo "... src/function_implement.i"
 	@echo "... src/function_implement.s"
