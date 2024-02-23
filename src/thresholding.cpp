@@ -34,9 +34,9 @@ void video_turnon()
     Mat gray;
     Mat th_frame;
     Mat clean_frame;
-    int min_area;
-    cout<<"Please enter the  minimum segmentation area "<<endl;
-    cin>>min_area;
+    int top_n = 4;
+    // cout<<"Please enter the  top segmentation regions to display"<<endl;
+    // cin>>min_area;
     vector<Vec3b> color_components;
     create_color_vector(color_components);
 
@@ -51,7 +51,7 @@ void video_turnon()
         }
         // key press
         int key = waitKey(1);
-        
+
         //  For segmentation
         Mat segment_output;
         Mat region_map;
@@ -60,16 +60,16 @@ void video_turnon()
         // COnvert to gray
         cvtColor(frame, gray, COLOR_BGR2GRAY);
         // Get the dynamic threshold
-        int  th = thresh(gray);
+        int th = get_otsu_thresh(gray);
         // Use the dynamic threshold to get the thresholded frame
-        thresh_custom(th,gray, th_frame);
+        thresh_custom(th, gray, th_frame);
         // Clean the thresholded frame
         // For cleanup_custom
         cleanup(th_frame, clean_frame);
         // Group the regions
-        int biggest_region = segment_image(clean_frame,region_map,color_components, segment_output, min_area,major_regions);
+        int biggest_region = segment_image(clean_frame, region_map, color_components, segment_output, top_n, major_regions);
         // Feature Vector for biggest region
-        vector<float> featurevector = computeFeatures(region_map,biggest_region,segment_output);
+        vector<float> featurevector = computeFeatures(region_map, biggest_region, segment_output);
         // Store in CSV on press of N button
         /*
         if (key == 'n' || key == 'N'){
@@ -81,7 +81,7 @@ void video_turnon()
         */
         // Display the video
         imshow("Video", segment_output);
-        
+
         if (key == 27 || key == 'q' || key == 'Q')
         {
             break;
