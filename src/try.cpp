@@ -43,26 +43,34 @@ int main()
     imshow("segment", segment_output);
     waitKey(0);
     */
-    string path;
-    cout << "Please enter the image path " << endl;
-    getline(cin, path);
-    Mat src = imread(path);
-    Mat gray;
-    Mat dst = Mat::zeros(src.size(), CV_8UC3);
-    cvtColor(src, gray, cv::COLOR_BGR2GRAY);     // converting to grayscale
-    GaussianBlur(gray, gray, cv::Size(5, 5), 1); // applying blur
-    Mat cannyOut;
-    Canny(gray, cannyOut, 50, 200); // applying canny edge detector
-    vector<vector<Point>> contour;
-    // finding the contour points of different regions
-    cv::findContours(cannyOut, contour, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
-    // vector<Point> cont = contour[0];
+    /*
+     string path;
+     cout << "Please enter the image path " << endl;
+     getline(cin, path);
+     Mat src = imread(path);
+     Mat gray;
+     Mat dst = Mat::zeros(src.size(), CV_8UC3);
+     cvtColor(src, gray, cv::COLOR_BGR2GRAY);     // converting to grayscale
+     GaussianBlur(gray, gray, cv::Size(5, 5), 1); // applying blur
+     Mat cannyOut;
+     Canny(gray, cannyOut, 50, 200); // applying canny edge detector
+     vector<vector<Point>> contour;
+     // finding the contour points of different regions
+     cv::findContours(cannyOut, contour, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE, cv::Point(0, 0));
+     // vector<Point> cont = contour[0];
 
-    cv::drawContours(dst, contour, 1, cv::Scalar(0, 255, 0), 2);
-    imshow("cont", dst);
-    waitKey(0);
+     cv::drawContours(dst, contour, 1, cv::Scalar(0, 255, 0), 2);
+     imshow("cont", dst);
+     waitKey(0);
 
-    return 0;
+     return 0;
+     */
+    vector<float> v1 = {23.4, 45.7, 89.3};
+    vector<float> v2{34.2, 0.4, 99.8};
+    pair<float, bool> result(compute_euclidean(v1, v2, 100.0));
+    cout << result.first << " bool : " << result.second << endl;
+    result = compute_similarity(v1, v2, 100.0);
+    cout << result.first << " bool : " << result.second << endl;
 }
 /*
 

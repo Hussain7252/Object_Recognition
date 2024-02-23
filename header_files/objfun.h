@@ -33,9 +33,11 @@ void create_color_vector(vector<Vec3b> &color_components);
 // Image Segmentation
 int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_components, Mat &segment_output, int top_n, vector<int> &major_regions);
 
-/*
-int segment_image(Mat frame, Mat &region_map, const vector<Vec3b> &color_components, Mat &segment_output, const int min_area, vector<int> &major_regions);
-*/
-
 // Compute Features
 vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img);
+
+// Scaled euclidean distance
+pair<float, bool> compute_euclidean(vector<float> fvec_1, vector<float> fvec_2, float known_threshold, float stdev = 1);
+
+// cosine similarity
+pair<float, bool> compute_similarity(vector<float> fvec_1, vector<float> fvec_2, float known_threshold);

@@ -347,3 +347,49 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
     putText(segmented_img, text, p1, cv::FONT_HERSHEY_COMPLEX_SMALL, 1, cv::Scalar(255, 0, 0), 1); // displaying the huMoment feature in real time for each contour
     return features;
 }
+
+// Scaled euclidean distance
+pair<float, bool> compute_euclidean(vector<float> fvec_1, vector<float> fvec_2, float known_threshold, float stdev)
+{
+
+    pair<float, bool> result_pair;
+    if (fvec_1.size() != fvec_2.size() || fvec_1.empty())
+    {
+        cout << "Size mismatch between feature vectors" << endl;
+        return result_pair;
+    }
+    float score = 0;
+    for (int i = 0; i < fvec_1.size(); i++)
+    {
+        score += pow((fvec_1[i] - fvec_2[i] / stdev), 2);
+    }
+    score = sqrt(score);
+    result_pair.first = score;
+    result_pair.second = score >= known_threshold ? true : false;
+    return result_pair;
+}
+
+// cosine similarity
+pair<float, bool> compute_similarity(vector<float> fvec_1, vector<float> fvec_2, float known_threshold)
+{
+    pair<float, bool> result_pair;
+    if (fvec_1.size() != fvec_2.size() || fvec_1.empty())
+    {
+        cout << "Size mismatch between feature vectors" << endl;
+        return result_pair;
+    }
+
+    // Convert vectors to OpenCV Mat
+    cv::Mat mat_v1(fvec_1);
+    cv::Mat mat_v2(fvec_2);
+
+    // Normalize vectors
+    cv::normalize(mat_v1, mat_v1);
+    cv::normalize(mat_v2, mat_v2);
+
+    float similarity = mat_v1.dot(mat_v2);
+    result_pair.first = similarity;
+    result_pair.second = similarity >= known_threshold ? true : false;
+
+    return result_pair;
+}
