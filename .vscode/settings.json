@@ -5,6 +5,7 @@
         "string_view": "cpp",
         "bitset": "cpp",
         "initializer_list": "cpp",
-        "utility": "cpp"
+        "utility": "cpp",
+        "limits": "cpp"
     }
 }
