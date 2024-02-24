@@ -6,6 +6,7 @@ Project :- Real-Time 2D Object Recognition
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 #include "../header_files/objfun.h"
+#include "../header_files/csv_util.h"
 using namespace std;
 using namespace cv;
 
@@ -65,12 +66,30 @@ int main()
 
      return 0;
      */
+    /*
     vector<float> v1 = {23.4, 45.7, 89.3};
     vector<float> v2{34.2, 0.4, 99.8};
     pair<float, bool> result(compute_euclidean(v1, v2, 100.0));
     cout << result.first << " bool : " << result.second << endl;
     result = compute_similarity(v1, v2, 100.0);
     cout << result.first << " bool : " << result.second << endl;
+    */
+   vector<char *> filenames;
+   vector<vector<float>> data;
+   string filename = "/home/hussain/computer_vision/CourseWork/Project3/filesystem/ip.csv";
+    char* filepath = new char[filename.length() + 1];
+    strcpy(filepath, filename.c_str());
+    read_image_data_csv(filepath , filenames, data,0 );
+    for(auto v:data){
+        for(int i=0;i<v.size();i++){
+            cout<<v[i]<<" ";
+        }
+        cout<<endl;
+    }
+    for(auto c:filenames){
+        cout<<c<<endl;
+    }
+   return 0;
 }
 /*
 

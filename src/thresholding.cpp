@@ -12,6 +12,7 @@ Project :- Real-Time 2D Object Recognition
 #include <cstring>
 #include <fstream>
 #include <filesystem> 
+#include <algorithm>
 namespace fs = std::filesystem; 
 using namespace std;
 using namespace cv;
@@ -19,7 +20,8 @@ using namespace cv;
 // Turns on your device default camera
 int video_turnon()
 {
-    VideoCapture capdev(0);
+    string ip = "http://10.0.0.232:8080/video";
+    VideoCapture capdev(ip);
     if (!capdev.isOpened())
     {
         cout << "Unable to open video device"
@@ -41,9 +43,10 @@ int video_turnon()
     Mat gray;
     Mat th_frame;
     Mat clean_frame;
-    int top_n = 4;
-    // cout<<"Please enter the  top segmentation regions to display"<<endl;
-    // cin>>min_area;
+    float threshold = 5;
+    int min_area;
+    cout<<"Please enter the min area to segment"<<endl;
+    cin>>min_area;
 
     vector<Vec3b> color_components;
     create_color_vector(color_components);
@@ -87,9 +90,60 @@ int video_turnon()
         // For cleanup_custom
         cleanup(th_frame, clean_frame);
         // Group the regions
-        int biggest_region = segment_image(clean_frame, region_map, color_components, segment_output, top_n, major_regions);
+        int biggest_region = segment_image(clean_frame, region_map, color_components, segment_output, min_area,major_regions);
         // Feature Vector for biggest region
-       vector<float> featurevector = computeFeatures(region_map, biggest_region, segment_output);
+        vector<float> featurevector = computeFeatures(region_map, biggest_region, segment_output);
+        // Calculate Error
+        if(!(fs::exists(filepath))|| fs::is_empty(filepath)){
+            cout<<"Nothing to compare with making a file system"<<endl;
+            key = 'N';
+            string text = "Unknown";
+            // Position for the text (top-right corner)
+            int fontFace = FONT_HERSHEY_SIMPLEX;
+            double fontScale = 1;
+            int thickness = 2;
+            int baseline=0;
+            Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseline);
+            Point textOrg(segment_output.cols - textSize.width - 10, textSize.height + 10);
+            // Add the text to the image
+            putText(segment_output, text, textOrg, fontFace, fontScale, Scalar(0,0,255), thickness);
+        }
+        else{ //extract the data from file and store it into a database
+            vector<vector<float>> database;
+            vector<char *> objectname;
+            read_image_data_csv(filepath,objectname,database,0);
+            //vector<float> error = compute_similarity(featurevector,database);
+            vector<float> error = distanceMetric(featurevector,database);
+            auto minIt = min_element(error.begin(),error.end());
+            int minIndex = distance(error.begin(),minIt);
+            float e = *minIt;
+            cout<<"The error is "<<e<<endl;
+            if(e<threshold){
+                string text = string(objectname[minIndex]);
+                int fontFace = FONT_HERSHEY_SIMPLEX;
+                double fontScale = 1;
+                int thickness = 2;
+                int baseline=0;
+                Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseline);
+                Point textOrg(segment_output.cols - textSize.width - 10, textSize.height + 10);
+                // Add the text to the image
+                putText(segment_output, text, textOrg, fontFace, fontScale, Scalar(0,0,255), thickness);
+            }else{
+                cout<<"This object is not found in databse"<<endl;
+                //key='N';
+                string text = "Unknown";
+                // Position for the text (top-right corner)
+                int fontFace = FONT_HERSHEY_SIMPLEX;
+                double fontScale = 1;
+                int thickness = 2;
+                int baseline=0;
+                Size textSize = getTextSize(text, fontFace, fontScale, thickness, &baseline);
+                Point textOrg(segment_output.cols - textSize.width - 10, textSize.height + 10);
+                // Add the text to the image
+                putText(segment_output, text, textOrg, fontFace, fontScale, Scalar(0,0,255), thickness);
+            }
+        }
+
         // Store in CSV on press of N button
         if (key == 'n' || key == 'N'){
             string lab;

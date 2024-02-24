@@ -222,8 +222,51 @@ void create_color_vector(vector<Vec3b> &color_components)
     color_components[0] = Vec3b(0, 0, 0);
 }
 
+int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_components, Mat &segment_output, const int min_area, vector<int> &major_regions)
+{
+    // Ensure the output image has the same dimensions as the input, but with 3 channels for color
+    segment_output = Mat::zeros(frame.size(), CV_8UC3);
+    Mat img_stats, centroids;
+    int label_count = connectedComponentsWithStats(frame, img_labels, img_stats, centroids, 8, CV_32S);
+
+    // Biggest Region in frame
+    int biggest_region;
+    int min_ar = INT_MIN;
+
+    // Create a flag array to mark labels that meet the area requirement
+    vector<bool> valid_label(label_count, false);
+    for (int i = 1; i < label_count; i++)
+    { // Start from 1 to skip background
+        int curr_area = img_stats.at<int>(i, CC_STAT_AREA);
+        if (curr_area > min_area)
+        {
+            valid_label[i] = true;
+            major_regions.push_back(i);
+            if (curr_area > min_ar)
+            {
+                biggest_region = i;
+                min_ar = curr_area;
+            }
+        }
+    }
+
+    // Color valid segments in one pass
+    for (int x = 0; x < img_labels.rows; x++)
+    {
+        for (int y = 0; y < img_labels.cols; y++)
+        {
+            int curr_label = img_labels.at<int>(x, y);
+            if (valid_label[curr_label])
+            {
+                segment_output.at<Vec3b>(x, y) = color_components[curr_label % color_components.size()];
+            }
+        }
+    }
+    return biggest_region;
+}
 // Image Segmentation
 // Suppose we get the main regions then do the necessary
+/*
 int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_components, Mat &segment_output, int top_n, vector<int> &major_regions)
 {
     // Ensure the output image has the same dimensions as the input, but with 3 channels for color
@@ -269,7 +312,7 @@ int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_compone
     }
     return area_map[0].second;
 }
-
+*/
 // Feature Vector Generation for the Major Region
 vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img)
 {
@@ -291,7 +334,6 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
     double b = 2 * m.mu11 / area;
     double c = m.mu02 / area;
     double theta = 0.5 * atan2(b, a - c);
-    double eccentricity = sqrt(1 - (c / a));
 
     // Calculate bounding box
     vector<Point> regionPoints;
@@ -300,7 +342,7 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
 
     // Calculate percent filled and bounding box ratio
     float percentFilled = area / (boundingBox.size.width * boundingBox.size.height);
-    float bboxRatio = max(boundingBox.size.height, boundingBox.size.width) / min(boundingBox.size.width, boundingBox.size.height);
+    float bboxRatio = min(boundingBox.size.height, boundingBox.size.width) / max(boundingBox.size.width, boundingBox.size.height);
 
     // HuMoments
     vector<double> humoment(7);
@@ -312,19 +354,24 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
         double absValue = abs(humoment[j]);
         if (absValue > numeric_limits<double>::epsilon())
         { // Check if absValue is not too close to zero
-            scaledhumoment[j] = -1 * copysign(1.0, humoment[j]) * log10(absValue);
+            if((-1 * copysign(1.0, humoment[j]) * log10(absValue))>0){
+                scaledhumoment[j] = -1 * copysign(1.0, humoment[j]) * log10(absValue);
+            }else{
+                scaledhumoment[j] = copysign(1.0, humoment[j]) * log10(absValue);
+            }
         }
         else
         {
             scaledhumoment[j] = 0; // Assign 0 if the Hu Moment is too close to zero to avoid -inf from log10
         }
-        features.push_back(scaledhumoment[j]);
+    }
+    for(int k=0;k<5;k++){
+        features.push_back(scaledhumoment[k]);
     }
 
     // Add features to the vector
     features.push_back(percentFilled);
     features.push_back(bboxRatio);
-    features.push_back(eccentricity); // Example additional feature
 
     // bounding box and axis could be added here
     Point2f vertices[4];
@@ -348,48 +395,88 @@ vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &seg
     return features;
 }
 
-// Scaled euclidean distance
-pair<float, bool> compute_euclidean(vector<float> fvec_1, vector<float> fvec_2, float known_threshold, float stdev)
-{
+vector<float> calculateStandardDeviations(vector<vector<float>> database) {
+    if (database.empty()) return {};
+    
+    size_t numFeatures = database[0].size();
+    std::vector<float> means(numFeatures, 0.0f);
+    std::vector<float> stdDevs(numFeatures, 0.0f);
 
-    pair<float, bool> result_pair;
-    if (fvec_1.size() != fvec_2.size() || fvec_1.empty())
-    {
-        cout << "Size mismatch between feature vectors" << endl;
-        return result_pair;
+    // Calculate means
+    for (const auto& entry : database) {
+        for (size_t i = 0; i < numFeatures; ++i) {
+            means[i] += entry[i];
+        }
     }
-    float score = 0;
-    for (int i = 0; i < fvec_1.size(); i++)
-    {
-        score += pow((fvec_1[i] - fvec_2[i] / stdev), 2);
+    for (auto& mean : means) {
+        mean /= database.size();
     }
-    score = sqrt(score);
-    result_pair.first = score;
-    result_pair.second = score >= known_threshold ? true : false;
-    return result_pair;
+
+    // Calculate standard deviation
+    for (const auto& entry : database) {
+        for (size_t i = 0; i < numFeatures; ++i) {
+            stdDevs[i] += (entry[i] - means[i])*(entry[i] - means[i]);
+        }
+    }
+    for (auto& stdDev : stdDevs) {
+        stdDev = std::sqrt(stdDev / database.size());
+    }
+
+    return stdDevs;
+}
+
+std::vector<float> distanceMetric(const std::vector<float>& feature, const std::vector<std::vector<float>>& database) {
+    std::vector<float> stdDevs = calculateStandardDeviations(database);
+    std::vector<float> distances;
+
+    for (const auto& dbFeature : database) {
+        float distance = 0.0f;
+        for (size_t i = 0; i < feature.size(); ++i) {
+            // Avoid division by zero in case of constant feature across all vectors
+            float scale = stdDevs[i] != 0 ? stdDevs[i] : 1.0f;
+            distance += ((feature[i] - dbFeature[i]) / scale)*((feature[i] - dbFeature[i]) / scale);
+        }
+        distances.push_back(std::sqrt(distance));
+    }
+    return distances;
+}
+
+// Cosine Distance
+CosineDistance::CosineDistance(const std::vector<float>& target, const std::vector<float>& img)
+: vecA(target), vecB(img) {}
+
+double CosineDistance::dotProduct(const std::vector<float>& A, const std::vector<float>& B) const {
+    double product = 0.0;
+    for (size_t i = 0; i < A.size(); ++i) {
+        product += (double)A[i] * B[i];
+    }
+    return product;
+}
+
+double CosineDistance::vecNorm(const std::vector<float>& V) const {
+    double norm = 0.0;
+    for (auto& val : V) {
+        norm += (double)val * val;
+    }
+    return sqrt(norm);
+}
+
+double CosineDistance::calculate() const {
+    double dot = this->dotProduct(vecA, vecB);
+    double normA = this->vecNorm(vecA);
+    double normB = this->vecNorm(vecB);
+    double cosSim = dot / (normA * normB);
+    return 1.0 - cosSim;
 }
 
 // cosine similarity
-pair<float, bool> compute_similarity(vector<float> fvec_1, vector<float> fvec_2, float known_threshold)
-{
-    pair<float, bool> result_pair;
-    if (fvec_1.size() != fvec_2.size() || fvec_1.empty())
-    {
-        cout << "Size mismatch between feature vectors" << endl;
-        return result_pair;
+std::vector<float> compute_similarity(const std::vector<float>& fvec_1, const std::vector<std::vector<float>>& database) {
+    std::vector<float> similarity(database.size());
+    
+    for(size_t i = 0; i < database.size(); ++i) {
+        CosineDistance cosineDistance(fvec_1, database[i]);
+        similarity[i] = cosineDistance.calculate(); // Compute cosine distance
     }
-
-    // Convert vectors to OpenCV Mat
-    cv::Mat mat_v1(fvec_1);
-    cv::Mat mat_v2(fvec_2);
-
-    // Normalize vectors
-    cv::normalize(mat_v1, mat_v1);
-    cv::normalize(mat_v2, mat_v2);
-
-    float similarity = mat_v1.dot(mat_v2);
-    result_pair.first = similarity;
-    result_pair.second = similarity >= known_threshold ? true : false;
-
-    return result_pair;
+    
+    return similarity;
 }

@@ -26,8 +26,11 @@ int main()
     Mat segment_output;
     Mat regionmap;
 
-    // Define the top_n and the major regions
-    int top_n = 4;
+    // Minimum area of segmented region
+    //int top_n = 4;
+    int min_area;
+    cout<<"Enter minimum area";
+    cin>>min_area;
     vector<int> major_regions;
 
     // Default color components for the segmentation colors
@@ -47,7 +50,7 @@ int main()
     waitKey(0);
 
     // Image Segmentation
-    int biggest = segment_image(dst, regionmap, color_components, segment_output, top_n, major_regions);
+    int biggest = segment_image(dst, regionmap, color_components, segment_output, min_area,major_regions);
 
     // Feature Vector Generation
     vector<float> featurevector = computeFeatures(regionmap, biggest, segment_output);
