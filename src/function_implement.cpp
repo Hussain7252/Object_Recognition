@@ -480,3 +480,22 @@ std::vector<float> compute_similarity(const std::vector<float>& fvec_1, const st
     
     return similarity;
 }
+
+// Confusion Matrix
+// Updates the confusion matrix with the true label and the predicted label
+void updateConfusionMatrix(const std::string& trueLabel, const std::string& predictedLabel, std::map<std::string, std::map<std::string, int>>& confusionMatrix,
+                            std::map<std::string, int>& labelToIndex,std::vector<std::string>& indexToLabel) {
+    // If this is a new label, add it to the mapping
+    if (labelToIndex.find(trueLabel) == labelToIndex.end()) {
+        int newIndex = labelToIndex.size();
+        labelToIndex[trueLabel] = newIndex;
+        indexToLabel.push_back(trueLabel);
+    }
+    if (labelToIndex.find(predictedLabel) == labelToIndex.end()) {
+        int newIndex = labelToIndex.size();
+        labelToIndex[predictedLabel] = newIndex;
+        indexToLabel.push_back(predictedLabel);
+    }
+    // Increment the count in the confusion matrix
+    confusionMatrix[trueLabel][predictedLabel]++;
+}

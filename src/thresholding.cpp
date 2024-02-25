@@ -43,7 +43,7 @@ int video_turnon()
     Mat gray;
     Mat th_frame;
     Mat clean_frame;
-    float threshold = 5;
+    float threshold = 2;
     int min_area;
     cout<<"Please enter the min area to segment"<<endl;
     cin>>min_area;
@@ -61,7 +61,11 @@ int video_turnon()
     //}
     char* filepath = new char[file_path.length() + 1];
     strcpy(filepath, file_path.c_str());
-
+    //Declare a confusion matrix to update globally
+    //Key is the true value and value is the map of what the predictions can be 
+    map<string,map<string, int>> confusionMatrix;
+    map<string, int> labelToIndex;
+    vector<string> indexToLabel;
 
     while (true)
     {
@@ -79,6 +83,7 @@ int video_turnon()
         Mat segment_output;
         Mat region_map;
         vector<int> major_regions;
+        string text;
         //
         // COnvert to gray
         cvtColor(frame, gray, COLOR_BGR2GRAY);
@@ -97,7 +102,7 @@ int video_turnon()
         if(!(fs::exists(filepath))|| fs::is_empty(filepath)){
             cout<<"Nothing to compare with making a file system"<<endl;
             key = 'N';
-            string text = "Unknown";
+            text = "Unknown";
             // Position for the text (top-right corner)
             int fontFace = FONT_HERSHEY_SIMPLEX;
             double fontScale = 1;
@@ -119,7 +124,7 @@ int video_turnon()
             float e = *minIt;
             cout<<"The error is "<<e<<endl;
             if(e<threshold){
-                string text = string(objectname[minIndex]);
+                text = string(objectname[minIndex]);
                 int fontFace = FONT_HERSHEY_SIMPLEX;
                 double fontScale = 1;
                 int thickness = 2;
@@ -131,7 +136,7 @@ int video_turnon()
             }else{
                 cout<<"This object is not found in databse"<<endl;
                 //key='N';
-                string text = "Unknown";
+                text = "Unknown";
                 // Position for the text (top-right corner)
                 int fontFace = FONT_HERSHEY_SIMPLEX;
                 double fontScale = 1;
@@ -144,6 +149,37 @@ int video_turnon()
             }
         }
 
+
+        // Make the confusion matrix
+        if(key == 'C' || key=='c'){
+            string truelabel;
+            cout<<"Enter the true label";
+            getline(cin,truelabel);
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            // Make a function that updates the confusion matrix 
+            // Declare the confusion matrix globally
+            updateConfusionMatrix(truelabel,text,confusionMatrix,labelToIndex,indexToLabel);
+        }
+        // See the confusion matrix
+        if(key == 'S' || key =='s'){
+            cout << "Confusion Matrix:\n\n";
+            cout << "True Label ---> Predicted Label: Count\n";
+            cout << "---------------------------------------\n";
+            string tl;
+            string pl;
+            for (int i = 0; i < indexToLabel.size(); i++) {
+                tl = indexToLabel[i];
+                for (int j = 0; j < indexToLabel.size(); j++) {
+                    pl = indexToLabel[j];
+                    // Accessing the count for the current trueLabel-predictedLabel pair
+                    int count = confusionMatrix[tl][pl];
+                    // Printing only the mappings that have a non-zero count
+                    cout << tl << " ---> " << pl << ": " << count << endl;
+                }
+            }
+            key = 'q';
+        }
+
         // Store in CSV on press of N button
         if (key == 'n' || key == 'N'){
             string lab;
@@ -154,6 +190,7 @@ int video_turnon()
             append_image_data_csv(filepath,name,featurevector,0);
         }
 
+        
 
         // Display the video
         imshow("Video", segment_output);

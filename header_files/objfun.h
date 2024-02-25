@@ -61,3 +61,7 @@ private:
 
 // cosine similarity
 std::vector<float> compute_similarity(const std::vector<float>& fvec_1, const std::vector<std::vector<float>>& database);
+
+//Confusion Matrix
+void updateConfusionMatrix(const std::string& trueLabel, const std::string& predictedLabel, std::map<std::string, std::map<std::string, int>>& confusionMatrix,
+                            std::map<std::string, int>& labelToIndex,std::vector<std::string>& indexToLabel);
