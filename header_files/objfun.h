@@ -65,3 +65,6 @@ std::vector<float> compute_similarity(const std::vector<float>& fvec_1, const st
 //Confusion Matrix
 void updateConfusionMatrix(const std::string& trueLabel, const std::string& predictedLabel, std::map<std::string, std::map<std::string, int>>& confusionMatrix,
                             std::map<std::string, int>& labelToIndex,std::vector<std::string>& indexToLabel);
+
+// Deep Netowork Embedding
+int getEmbedding( cv::Mat &src, cv::Mat &embedding, cv::Rect &bbox, cv::dnn::Net &net, int debug=0 );

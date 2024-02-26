@@ -466,7 +466,7 @@ double CosineDistance::calculate() const {
     double normA = this->vecNorm(vecA);
     double normB = this->vecNorm(vecB);
     double cosSim = dot / (normA * normB);
-    return 1.0 - cosSim;
+    return (float)1.0 - cosSim;
 }
 
 // cosine similarity
@@ -498,4 +498,49 @@ void updateConfusionMatrix(const std::string& trueLabel, const std::string& pred
     }
     // Increment the count in the confusion matrix
     confusionMatrix[trueLabel][predictedLabel]++;
+}
+
+// DNN Embedding Part gives the embedding
+/*
+  cv::Mat src        thresholded and cleaned up image in 8UC1 format
+  cv::Mat ebmedding  holds the embedding vector after the function returns
+  cv::Rect bbox      the axis-oriented bounding box around the region to be identified
+  cv::dnn::Net net   the pre-trained network
+  int debug          1: show the image given to the network and print the embedding, 0: don't show extra info
+ */
+int getEmbedding(cv::Mat &src, cv::Mat &embedding, cv::Rect &bbox, cv::dnn::Net &net, int debug)
+{
+    const int ORNet_size = 128;
+    cv::Mat padImg;
+    cv::Mat blob;
+
+    cv::Mat roiImg = src(bbox);
+    int top = bbox.height > 128 ? 10 : (128 - bbox.height) / 2 + 10;
+    int left = bbox.width > 128 ? 10 : (128 - bbox.width) / 2 + 10;
+    int bottom = top;
+    int right = left;
+
+    cv::copyMakeBorder(roiImg, padImg, top, bottom, left, right, cv::BORDER_CONSTANT, 0);
+    cv::resize(padImg, padImg, cv::Size(128, 128));
+
+    cv::dnn::blobFromImage(src,                              // input image
+                           blob,                             // output array
+                           (1.0 / 255.0) / 0.5,              // scale factor
+                           cv::Size(ORNet_size, ORNet_size), // resize the image to this
+                           128,                              // subtract mean prior to scaling
+                           false,                            // input is a single channel image
+                           true,                             // center crop after scaling short side to size
+                           CV_32F);                          // output depth/type
+
+    net.setInput(blob);
+    embedding = net.forward("/fc1/Gemm_output_0");
+
+    if (debug)
+    {
+        cv::imshow("pad image", padImg);
+        std::cout << embedding << std::endl;
+        cv::waitKey(0);
+    }
+
+    return (0);
 }

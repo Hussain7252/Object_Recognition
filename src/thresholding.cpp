@@ -38,12 +38,36 @@ int video_turnon()
     std::cout << "Frames Per Second (fps): " << fps << std::endl;
     std::cout << "Total Number of Frames: " << totalFrames << std::endl;
     namedWindow("Video", 1); // identifies a window
+    
+    //Select the Feature Vector Model
+    dnn::Net net;
+    int classifier_mode;
+    cout << "Please select the classifier mode: " << endl;
+    cout << "1 - Moment based\n2 - DNN based\n";
+    cin >> classifier_mode;
+    if (classifier_mode != 1 && classifier_mode != 2)
+    {
+        cout << "Invalid mode selected" << endl;
+        return (0);
+    }
+    if (classifier_mode == 2)
+    {
+        // read the network
+        net = dnn::readNet("../src/or2d-normmodel-007.onnx");
+        cout<<"Network read successfully"<<endl;
+    }
+    
     // Different Mat variables
     Mat frame;
     Mat gray;
     Mat th_frame;
     Mat clean_frame;
-    float threshold = 2;
+    float threshold;
+    if(classifier_mode==1){
+        threshold = 2;
+    }else{
+        threshold = 0.3;
+    }
     int min_area;
     cout<<"Please enter the min area to segment"<<endl;
     cin>>min_area;
@@ -53,6 +77,7 @@ int video_turnon()
     // Filename to store feature vectors
     string file_path;
     cout<<"Please enter the file name where features have to be stored and retrieved"<<endl;
+    cout<<"Make sure to enter correct filepath for DNN and Nearest Neighbout Feature Vector"<<endl;
     cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin,file_path);
     // if (!file_path.ends_with(".csv")){
@@ -96,8 +121,28 @@ int video_turnon()
         cleanup(th_frame, clean_frame);
         // Group the regions
         int biggest_region = segment_image(clean_frame, region_map, color_components, segment_output, min_area,major_regions);
-        // Feature Vector for biggest region
-        vector<float> featurevector = computeFeatures(region_map, biggest_region, segment_output);
+        //Creation of Feature vector based on classifiermode
+        // For Nearest Neighbour make a feature vector for biggest region
+        vector<float> featurevector;
+        if (classifier_mode==1){
+            featurevector = computeFeatures(region_map, biggest_region, segment_output);
+        }
+        else{
+            Mat emb;
+            //get bounding box around the main object in file
+            //Rect bounding_box;
+            //Mat region = region_map == biggest_region;
+            // Calculate bounding box
+            //vector<Point> regionPoints;
+            //findNonZero(region, regionPoints);
+            // Calculate the bounding box for the points of the largest region
+            //if (!regionPoints.empty()) {
+            //   bounding_box = boundingRect(regionPoints);
+            cv::Rect bbox( 0, 0, clean_frame.cols, clean_frame.rows );
+            getEmbedding(clean_frame,emb,bbox,net,0);
+            featurevector.assign((float*)emb.datastart, (float*)emb.dataend);
+            //}
+        }
         // Calculate Error
         if(!(fs::exists(filepath))|| fs::is_empty(filepath)){
             cout<<"Nothing to compare with making a file system"<<endl;
@@ -117,8 +162,12 @@ int video_turnon()
             vector<vector<float>> database;
             vector<char *> objectname;
             read_image_data_csv(filepath,objectname,database,0);
-            //vector<float> error = compute_similarity(featurevector,database);
-            vector<float> error = distanceMetric(featurevector,database);
+            vector<float> error;
+            if(classifier_mode == 2){
+                error = compute_similarity(featurevector,database);
+            }else{
+                error = distanceMetric(featurevector,database);
+            }
             auto minIt = min_element(error.begin(),error.end());
             int minIndex = distance(error.begin(),minIt);
             float e = *minIt;
@@ -190,10 +239,23 @@ int video_turnon()
             append_image_data_csv(filepath,name,featurevector,0);
         }
 
-        
+        // Save the Classified frame if user wants
+        if(key == 'x' || key == 'X'){
+            // Define the folder path and file name
+            string folderPath = "/home/hussain/computer_vision/CourseWork/Project3/report_pictures/"; // Make sure this directory exis
+            cout<<"Enter image name"<<endl;
+            string fileName;
+            getline(cin,fileName);
+            string fullPath = folderPath + fileName;
+            imwrite(fullPath,segment_output);
+        }
+        namedWindow("Video", WINDOW_NORMAL); // WINDOW_NORMAL allows the window to be resizable
+        resizeWindow("Video", 640, 480);
+        Mat resizedFrame;
+        resize(segment_output, resizedFrame, Size(640, 480));
 
         // Display the video
-        imshow("Video", segment_output);
+        imshow("Video", resizedFrame);
 
         if (key == 27 || key == 'q' || key == 'Q')
         {

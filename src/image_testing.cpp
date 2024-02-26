@@ -41,20 +41,34 @@ int main()
     cvtColor(frame, gray, COLOR_BGR2GRAY);
     int thresh_val = get_otsu_thresh(gray);
     thresh_custom(thresh_val, gray, currentframe);
-    imshow("Threshold Image", currentframe);
+    namedWindow("Thresholded", WINDOW_NORMAL); // WINDOW_NORMAL allows the window to be resizable
+    resizeWindow("Thresholded", 640, 480);
+    resize(currentframe, currentframe, Size(640, 480));
+    imshow("Thresholded", currentframe);
     waitKey(0);
 
     // Cleanup
     cleanup(currentframe, dst);
-    imshow("Cleaned Image", dst);
+    namedWindow("Cleanedup", WINDOW_NORMAL); // WINDOW_NORMAL allows the window to be resizable
+    resizeWindow("Cleanedup", 640, 480);
+    resize(dst,dst, Size(640, 480));
+    imshow("Cleanedup", dst);
     waitKey(0);
 
     // Image Segmentation
     int biggest = segment_image(dst, regionmap, color_components, segment_output, min_area,major_regions);
+    namedWindow("segment", WINDOW_NORMAL); // WINDOW_NORMAL allows the window to be resizable
+    resizeWindow("segment", 640, 480);
+    resize(segment_output,segment_output, Size(640, 480));
+    imshow("segment",segment_output);
+
 
     // Feature Vector Generation
     vector<float> featurevector = computeFeatures(regionmap, biggest, segment_output);
-    imshow("Segmented Image", segment_output);
+    namedWindow("Feature", WINDOW_NORMAL); // WINDOW_NORMAL allows the window to be resizable
+    resizeWindow("Feature", 640, 480);
+    resize(segment_output,segment_output, Size(640, 480));
+    imshow("Feature", segment_output);
     waitKey(0);
 
     return 0;
