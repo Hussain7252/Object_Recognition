@@ -1,7 +1,8 @@
-Author:-
-Hussain Kanchwala 
+Team Members:-
+Hussain Kanchwala and Abdulaziz Suria
 
 OS :
+Abdulaziz - Windows w/ VSCode and CMake
 Hussain - Linux (Ubuntu) w/ VSCode and CMake
 
 Instructions for running executables:
@@ -21,7 +22,6 @@ add_executable(vidDisplay src/thresholding.cpp header_files/objfun.h src/functio
 
 NOTE : All header files should be in .\header_files folder and code files in .\src folder
 The .onnx file for DNN should also be in the .\src folder
-
 
 
 
