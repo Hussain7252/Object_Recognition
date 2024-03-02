@@ -64,7 +64,7 @@ int video_turnon()
     Mat clean_frame;
     float threshold;
     if(classifier_mode==1){
-        threshold = 2;
+        threshold = 1;
     }else{
         threshold = 0.3;
     }
@@ -118,7 +118,8 @@ int video_turnon()
         thresh_custom(th, gray, th_frame);
         // Clean the thresholded frame
         // For cleanup_custom
-        cleanup(th_frame, clean_frame);
+        cleanup_custom(th_frame,clean_frame);
+        //cleanup(th_frame, clean_frame);
         // Group the regions
         int biggest_region = segment_image(clean_frame, region_map, color_components, segment_output, min_area,major_regions);
         //Creation of Feature vector based on classifiermode
@@ -184,7 +185,7 @@ int video_turnon()
                 putText(segment_output, text, textOrg, fontFace, fontScale, Scalar(0,0,255), thickness);
             }else{
                 cout<<"This object is not found in databse"<<endl;
-                //key='N';
+                key='N';
                 text = "Unknown";
                 // Position for the text (top-right corner)
                 int fontFace = FONT_HERSHEY_SIMPLEX;
@@ -242,7 +243,7 @@ int video_turnon()
         // Save the Classified frame if user wants
         if(key == 'x' || key == 'X'){
             // Define the folder path and file name
-            string folderPath = "/home/hussain/computer_vision/CourseWork/Project3/report_pictures/"; // Make sure this directory exis
+            string folderPath = "/home/hussain/computer_vision/CourseWork/Project3/report_pictures"; // Make sure this directory exis
             cout<<"Enter image name"<<endl;
             string fileName;
             getline(cin,fileName);
@@ -256,7 +257,7 @@ int video_turnon()
 
         // Display the video
         imshow("Video", resizedFrame);
-
+        // Stop the video when press ESC or Q
         if (key == 27 || key == 'q' || key == 'Q')
         {
             break;

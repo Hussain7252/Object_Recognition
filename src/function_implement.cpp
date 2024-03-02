@@ -169,7 +169,7 @@ void erode_custom(Mat &src, Mat &dst, Mat &e_kernel)
     }
 }
 
-//
+// Integrating Custom dialation and erosion.
 void cleanup_custom(Mat frame, Mat &currentframe)
 {
     Mat d_kernel = Mat::ones(Size(8, 8), CV_8U);
@@ -178,34 +178,6 @@ void cleanup_custom(Mat frame, Mat &currentframe)
     dilate_custom(frame, dst, d_kernel);
     erode_custom(dst, currentframe, e_kernel);
 }
-/*
-// Given a Binary Cleaned up Image, do the segmentation.
-// In the segmented Image only show the regions that are greater than the user specified value
-void segment_image(Mat cleanedup, Mat &segmented_output,const int min_area)
-{
-
-    // Use  these two lines to further continue for task 4 in main program itself, I did the visual display
-    Mat img_labels, img_stats, centroids;
-    Mat dst = Mat::zeros(cleanedup.size(),CV_8UC3);
-    int label_count = connectedComponentsWithStats(cleanedup, img_labels, img_stats, centroids);
-    vector<Vec3b> colors(label_count);
-    colors[0] = Vec3b(0,0,0); // Background Color
-    for(int label =1; label<label_count;label++ ){
-        colors[label] = Vec3b((rand()&255),(rand()&255),(rand()&255));
-    }
-    for(int r=0;r<img_labels.rows;r++){
-        for(int c=0;c<img_labels.cols;c++){
-            int label = img_labels.at<int>(r,c);
-            int* stat = img_stats.ptr<int>(label);
-            int area = stat[ConnectedComponentsTypes::CC_STAT_AREA];
-            if(area>=min_area){
-                dst.at<Vec3b>(r,c) = colors[label];
-            }
-        }
-    }
-    segmented_output = dst.clone();
-}
-*/
 
 // fixed predefined set of colors generate once per program
 void create_color_vector(vector<Vec3b> &color_components)
@@ -264,55 +236,7 @@ int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_compone
     }
     return biggest_region;
 }
-// Image Segmentation
-// Suppose we get the main regions then do the necessary
-/*
-int segment_image(Mat frame, Mat &img_labels, const vector<Vec3b> &color_components, Mat &segment_output, int top_n, vector<int> &major_regions)
-{
-    // Ensure the output image has the same dimensions as the input, but with 3 channels for color
-    segment_output = Mat::zeros(frame.size(), CV_8UC3);
-    Mat img_stats, centroids;
-    int label_count = connectedComponentsWithStats(frame, img_labels, img_stats, centroids, 8, CV_32S);
 
-    vector<pair<int, int>> area_map;
-    // Biggest Region in frame
-
-    for (int i = 1; i < label_count; i++)
-    { // Start from 1 to skip background
-        int curr_area = img_stats.at<int>(i, CC_STAT_AREA);
-        area_map.push_back(make_pair(curr_area, i));
-    }
-    sort(area_map.begin(), area_map.end(), greater<>());
-
-    // Get the top n labels within range
-    top_n = min(top_n, label_count - 1);
-
-    // Keep the top n values in the area map
-    area_map.resize(top_n);
-
-    // Use set for faster retrieval of labels
-    unordered_set<int> valid_labels;
-
-    for (const auto &area_label_pair : area_map)
-    {
-        valid_labels.insert(area_label_pair.second);
-    }
-
-    // Color valid segments in one pass
-    for (int x = 0; x < img_labels.rows; x++)
-    {
-        for (int y = 0; y < img_labels.cols; y++)
-        {
-            int curr_label = img_labels.at<int>(x, y);
-            if (valid_labels.find(curr_label) != valid_labels.end())
-            {
-                segment_output.at<Vec3b>(x, y) = color_components[curr_label % color_components.size()];
-            }
-        }
-    }
-    return area_map[0].second;
-}
-*/
 // Feature Vector Generation for the Major Region
 vector<float> computeFeatures(const Mat &regionMap, int regionId, const Mat &segmented_img)
 {

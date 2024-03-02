@@ -2,7 +2,7 @@
 Project :- Real-Time 2D Object Recognition
 @ Author:- Hussain Kanchwala, Abdulaziz Suria
 @ Date  :- Start: - 02/19/24 End:- 02/25/24
-This file takes in an image and recognizes the object provided in the given image (if present in DB)
+This file takes in an image and segmentes the image and finds the features
 */
 #include <stdio.h>
 #include <opencv2/opencv.hpp>

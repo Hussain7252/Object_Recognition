@@ -1,12 +1,7 @@
-TIME-TRAVEL DAYS USED : 2 
-Team Members:-
-Hussain Kanchwala and Abdulaziz Suria
-
-Project:
-Real Time 2D Object Recognition
+Author:-
+Hussain Kanchwala 
 
 OS :
-Abdulaziz - Windows w/ VSCode and CMake
 Hussain - Linux (Ubuntu) w/ VSCode and CMake
 
 Instructions for running executables:
@@ -27,12 +22,7 @@ add_executable(vidDisplay src/thresholding.cpp header_files/objfun.h src/functio
 NOTE : All header files should be in .\header_files folder and code files in .\src folder
 The .onnx file for DNN should also be in the .\src folder
 
-EXTENSION:
-We have also added support to detect unknown objects and supported multiple objects as part of extension
-(mention more about  the objects and unknown system here)
-# If the error of the object in given frame wrt the database is greater than the threshold then it is classified as unknown and automatically prompts the user to enter the label to store it in the database
-# The models were trained to detect 13 objects namely circle, cylinder, five, glove, mouse, mug, passport, powerbank, spoon, three, two, umbrella and watch.
-# Dynamic confusion matrix creation is enabled providing user capability to create a confusion matrix by clicking 'C' and providing the true labels.
+
 
 
 
